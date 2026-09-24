@@ -1,14 +1,127 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
-Run and deploy your AI Studio app
-This contains everything you need to run your app locally.
-View your app in AI Studio: https://ai.studio/apps/4aaeb4a9-4435-4c21-8cbb-f8bb6ded4e50
-Run Locally
-Prerequisites:  Node.js
+# EXPLAINABLE-CANDIDATE-ROLE-FIT-ENGINE
 
-Install dependencies:
-`npm install`
-Set the `GEMINI_API_KEY` in .env.local to your Gemini API key
-Run the app:
-`npm run dev`
+**Team Name:** NEURAL NINJAS
+**Team Code:** HTH059GA22
+
+**Team Members:**
+1. GURUDEEP C
+2. GUNAA S
+3. BALAN K M
+4. DHARANI DHARAN D
+
+**License:** For educational purpose only
+
+---
+
+## 1. Project Overview
+
+The Explainable Candidate Role Fit Engine is an AI-based system that matches candidates to job roles and explains why a candidate is or is not a good fit. Most hiring tools return only a score or a rank. This engine returns a fit score along with clear, human-readable reasons, such as which skills matched, which are missing, and how strongly each factor affected the result.
+
+## 2. Problem Statement
+
+Recruiters screen large numbers of resumes manually, which is slow and can be inconsistent or biased. Existing automated screening tools often work as "black boxes," so neither recruiters nor candidates can see the reasoning behind a decision. There is a need for a transparent system that evaluates role fit fairly and justifies every result.
+
+## 3. Objectives
+
+- Extract structured information (skills, experience, education, projects) from resumes.
+- Analyze job descriptions and identify the required skills and qualifications.
+- Compute a role-fit score for each candidate against a given role.
+- Explain the score using feature-level reasoning.
+- Identify skill gaps and suggest improvement areas.
+- Support fair, transparent, and auditable screening.
+
+## 4. Key Features
+
+- **Resume Parsing:** Converts unstructured resumes (PDF/DOCX/text) into structured data.
+- **Job Description Analysis:** Extracts required skills, experience level, and responsibilities.
+- **Role-Fit Scoring:** Combines skill match, experience relevance, and semantic similarity into one score.
+- **Explainability Layer:** Shows the contribution of each factor to the final score (for example, using SHAP or LIME-style feature attribution).
+- **Skill Gap Report:** Lists matched skills, partially matched skills, and missing skills.
+- **Candidate Ranking:** Ranks multiple candidates for the same role, with reasons for each position.
+- **Bias Awareness:** Ignores sensitive attributes such as name, gender, and age when scoring.
+
+## 5. System Structure
+
+**Input Layer**
+- Candidate resumes
+- Job descriptions
+
+**Processing Layer**
+- Text extraction and cleaning
+- Named entity and skill extraction (NLP)
+- Skill normalization (mapping variations such as "JS" to "JavaScript")
+- Embedding generation for semantic matching
+
+**Matching and Scoring Layer**
+- Skill overlap analysis
+- Experience and education relevance
+- Semantic similarity between resume and job description
+- Final weighted fit score
+
+**Explainability Layer**
+- Feature importance and contribution breakdown
+- Matched and missing skill summary
+- Natural-language explanation of the result
+
+**Output Layer**
+- Fit score with category (Strong, Moderate, Weak)
+- Explanation report
+- Skill gap analysis
+- Ranked candidate list
+
+## 6. Workflow
+
+1. Upload the candidate resume and the job description.
+2. The system extracts and structures the information.
+3. Candidate and role features are compared.
+4. The fit score is calculated.
+5. The explanation module identifies the factors that influenced the score.
+6. The final report is displayed to the user.
+
+## 7. Suggested Technology Stack
+
+- **Language:** Python
+- **NLP:** spaCy, NLTK, Sentence Transformers
+- **Machine Learning:** scikit-learn
+- **Explainability:** SHAP, LIME
+- **Interface:** Streamlit or Flask
+- **Data Handling:** Pandas, NumPy
+
+## 8. Proposed Folder Structure
+
+```
+EXPLAINABLE-CANDIDATE-ROLE-FIT-ENGINE/
+├── data/              # Sample resumes and job descriptions
+├── parser/            # Resume and JD parsing modules
+├── models/            # Scoring and matching models
+├── explainability/    # Explanation generation modules
+├── app/               # User interface
+├── reports/           # Generated fit reports
+├── README.md
+└── LICENSE
+```
+
+## 9. Expected Outcomes
+
+- Faster and more consistent candidate screening.
+- Transparent decisions that recruiters can verify.
+- Useful feedback for candidates on skill gaps.
+- A foundation for fair, explainable AI in recruitment.
+
+## 10. Future Scope
+
+- Support for multiple languages.
+- Integration with applicant tracking systems.
+- Fairness audits and bias metrics dashboards.
+- Personalized learning recommendations for missing skills.
+
+## 11. License
+
+This project is developed **for educational purpose** only and is not intended for commercial use.
+
+---
+
+**Team:** NEURAL NINJAS | **Team Code:** HTH059GA22
+**Members:** GURUDEEP C, GUNAA S, BALAN K M, DHARANI DHARAN D
+
+I can also turn this into a README.md, Word file, or PDF if you'd like.
