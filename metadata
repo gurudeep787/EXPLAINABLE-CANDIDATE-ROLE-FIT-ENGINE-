@@ -1,0 +1,6 @@
+{
+  "name": "AI Resume Screening & Interview Assistant",
+  "description": "Transparent, evidence-backed HR screening system with requirement matching, exact textual evidence, gap analysis, targeted interview preparation, and bias audit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
