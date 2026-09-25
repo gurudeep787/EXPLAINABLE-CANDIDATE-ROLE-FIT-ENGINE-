@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fit Engine — Explainable Candidate-Role Matching</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+:root{
+  --ink:#14201c; --paper:#f6f4ee; --paper-2:#eae6da; --line:#cdc6b2;
+  --evidence:#c98a2c; --match:#2f6d4f; --gap:#a4442f; --muted:#5c6b62;
+  font-family:'Iowan Old Style','Palatino Linotype',Georgia,serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--ink:#f0ede2;--paper:#161c19;--paper-2:#1f2622;--line:#38423b;--muted:#9aa89e;}
+}
+:root[data-theme="dark"]{--ink:#f0ede2;--paper:#161c19;--paper-2:#1f2622;--line:#38423b;--muted:#9aa89e;}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+.wrap{max-width:760px;margin:0 auto;padding:40px 20px 80px;}
+header{margin-bottom:36px;}
+h1{font-size:1.9rem;margin:0 0 6px;font-weight:600;letter-spacing:-.01em;}
+.sub{color:var(--muted);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.95rem;max-width:52ch;line-height:1.5;}
+label{display:block;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.8rem;color:var(--muted);margin:22px 0 8px;}
+textarea,input[type=file]{width:100%;font-family:inherit;font-size:.95rem;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:3px;padding:12px;}
+textarea{min-height:110px;resize:vertical;}
+.dropzone{border:1px dashed var(--line);border-radius:3px;padding:20px;text-align:center;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;color:var(--muted);cursor:pointer;background:var(--paper-2);}
+.dropzone.has-file{color:var(--match);border-color:var(--match);}
+.jd-picks{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;}
+.jd-picks button{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;border:1px solid var(--line);background:transparent;color:var(--muted);padding:6px 10px;border-radius:20px;cursor:pointer;}
+.jd-picks button.active{border-color:var(--evidence);color:var(--evidence);}
+.run{margin-top:28px;width:100%;padding:14px;background:var(--ink);color:var(--paper);border:none;border-radius:3px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.95rem;font-weight:600;cursor:pointer;}
+.run:disabled{opacity:.5;cursor:default;}
+.status{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;color:var(--muted);margin-top:10px;min-height:1.2em;}
+.report{margin-top:40px;border-top:1px solid var(--line);padding-top:28px;}
+.score-row{display:flex;align-items:baseline;gap:14px;margin-bottom:6px;}
+.score{font-size:2.6rem;font-weight:600;}
+.score-label{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;color:var(--muted);}
+.verdict{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.95rem;line-height:1.6;color:var(--muted);margin-bottom:28px;}
+.req{border-left:3px solid var(--line);padding:4px 0 4px 16px;margin-bottom:18px;}
+.req.match{border-color:var(--match);}
+.req.gap{border-color:var(--gap);}
+.req-head{display:flex;justify-content:space-between;align-items:baseline;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+.req-title{font-size:.95rem;font-weight:600;}
+.tag{font-size:.72rem;padding:2px 8px;border-radius:20px;}
+.tag.match{background:color-mix(in srgb, var(--match) 18%, transparent);color:var(--match);}
+.tag.gap{background:color-mix(in srgb, var(--gap) 18%, transparent);color:var(--gap);}
+.evidence{margin:8px 0 0;font-size:.92rem;color:var(--evidence);border-left:2px solid var(--evidence);padding-left:10px;}
+.reason{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;color:var(--muted);margin-top:6px;line-height:1.5;}
+.section-h{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:34px 0 14px;}
+.q{margin-bottom:12px;padding-left:16px;border-left:3px solid var(--line);font-size:.95rem;}
+.bias{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:.85rem;color:var(--muted);background:var(--paper-2);border-radius:3px;padding:14px 16px;line-height:1.6;}
+::-webkit-scrollbar{height:8px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fit Engine</h1>
+    <p class="sub">Upload a resume, pick a role. Every verdict below is grounded in a quoted line from the resume — nothing scored without evidence attached.</p>
+  </header>
+
+  <label>Resume (.txt or .pdf)</label>
+  <div class="dropzone" id="dropzone">Click to choose a file, or drop one here</div>
+  <input type="file" id="fileInput" accept=".txt,.pdf" style="display:none">
+
+  <label>Job description</label>
+  <div class="jd-picks" id="jdPicks"></div>
+  <textarea id="jdText" placeholder="Paste a job description, or pick a sample above"></textarea>
+
+  <label>Anthropic API key (kept in your browser only, never saved)</label>
+  <input type="password" id="apiKey" placeholder="sk-ant-..." style="width:100%;font-family:inherit;font-size:.95rem;border:1px solid var(--line);background:var(--paper-2);color:var(--ink);border-radius:3px;padding:12px;">
+
+  <button class="run" id="runBtn" disabled>Score this candidate</button>
+  <div class="status" id="status"></div>
+
+  <div class="report" id="report" style="display:none"></div>
+</div>
+
+<script>
+const SAMPLE_JDS = {
+  "Backend Engineer": "Backend Engineer — 3+ years with Python or Go, REST API design, PostgreSQL, Docker/Kubernetes, CI/CD pipelines. Bonus: distributed systems experience, on-call rotation comfort.",
+  "Data Analyst": "Data Analyst — SQL proficiency, dashboarding (Tableau/PowerBI), statistics fundamentals, stakeholder communication, Python or R for analysis. Bonus: A/B testing, ETL pipeline exposure.",
+  "ML Engineer": "Machine Learning Engineer — production ML systems, PyTorch or TensorFlow, model deployment/MLOps, feature engineering, familiarity with LLM fine-tuning. Bonus: MLflow, vector databases."
+};
+
+let resumeText = "";
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const jdText = document.getElementById('jdText');
+const runBtn = document.getElementById('runBtn');
+const statusEl = document.getElementById('status');
+const report = document.getElementById('report');
+const jdPicks = document.getElementById('jdPicks');
+
+Object.keys(SAMPLE_JDS).forEach(name=>{
+  const b = document.createElement('button');
+  b.textContent = name;
+  b.onclick = ()=>{
+    jdText.value = SAMPLE_JDS[name];
+    [...jdPicks.children].forEach(c=>c.classList.remove('active'));
+    b.classList.add('active');
+    checkReady();
+  };
+  jdPicks.appendChild(b);
+});
+
+dropzone.onclick = ()=>fileInput.click();
+dropzone.ondragover = e=>{e.preventDefault();};
+dropzone.ondrop = e=>{e.preventDefault(); handleFile(e.dataTransfer.files[0]);};
+fileInput.onchange = e=>handleFile(e.target.files[0]);
+jdText.oninput = checkReady;
+
+async function handleFile(file){
+  if(!file) return;
+  dropzone.textContent = "Reading " + file.name + " …";
+  try{
+    if(file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')){
+      resumeText = await extractPdfText(file);
+    } else {
+      resumeText = await file.text();
+    }
+    dropzone.textContent = "✓ " + file.name + " (" + resumeText.trim().split(/\s+/).length + " words)";
+    dropzone.classList.add('has-file');
+  }catch(err){
+    dropzone.textContent = "Couldn't read that file — try a .txt export instead.";
+    dropzone.classList.remove('has-file');
+    resumeText = "";
+  }
+  checkReady();
+}
+
+async function extractPdfText(file){
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({data: buf}).promise;
+  let text = "";
+  for(let i=1;i<=pdf.numPages;i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    text += content.items.map(it=>it.str).join(" ") + "\n";
+  }
+  return text;
+}
+
+const apiKeyInput = document.getElementById('apiKey');
+apiKeyInput.oninput = checkReady;
+
+function checkReady(){
+  runBtn.disabled = !(resumeText.trim() && jdText.value.trim() && apiKeyInput.value.trim());
+}
+
+runBtn.onclick = async ()=>{
+  runBtn.disabled = true;
+  statusEl.textContent = "Reading the resume against the requirements…";
+  report.style.display = "none";
+
+  const prompt = `You are an HR audit-grade fit-scoring engine. Compare this resume to this job description.
+
+RESUME:
+"""${resumeText.slice(0,6000)}"""
+
+JOB DESCRIPTION:
+"""${jdText.value.slice(0,3000)}"""
+
+Break the JD into 4-7 distinct requirements. For each, decide match or gap, and quote a short exact phrase (under 12 words) from the resume as evidence — if it's a gap, quote the closest related phrase or write "no evidence found in resume". Never reference age, gender, name, photo, or graduation year as evidence. Then write 3 targeted interview questions probing the weakest matched or gapped areas, and a one-sentence bias-audit note confirming no protected-attribute proxies were used in scoring.
+
+Respond with ONLY this JSON shape, no markdown fences:
+{"overall_score": <0-100 integer>, "verdict": "<one sentence>", "requirements": [{"title": "", "status": "match"|"gap", "evidence": "", "reason": ""}], "interview_questions": ["", "", ""], "bias_note": ""}`;
+
+  try{
+    const res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKeyInput.value.trim(),
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1500,
+        messages: [{role:"user", content: prompt}]
+      })
+    });
+    const data = await res.json();
+    if(data.error) throw new Error(data.error.message);
+    const raw = data.content.map(b=>b.text||"").join("").trim()
+      .replace(/^```json\s*/,"").replace(/```$/,"");
+    const result = JSON.parse(raw);
+    renderReport(result);
+    statusEl.textContent = "";
+  }catch(err){
+    statusEl.textContent = "Scoring failed: " + err.message;
+  }
+  runBtn.disabled = false;
+};
+
+function esc(s){ const d=document.createElement('div'); d.textContent = s||""; return d.innerHTML; }
+
+function renderReport(r){
+  let html = `<div class="score-row"><div class="score">${r.overall_score}</div><div class="score-label">/ 100 fit score</div></div>`;
+  html += `<div class="verdict">${esc(r.verdict)}</div>`;
+  html += `<div class="section-h">Per-requirement evidence</div>`;
+  (r.requirements||[]).forEach(req=>{
+    const cls = req.status === 'match' ? 'match' : 'gap';
+    html += `<div class="req ${cls}"><div class="req-head"><span class="req-title">${esc(req.title)}</span><span class="tag ${cls}">${cls}</span></div>`;
+    html += `<div class="evidence">"${esc(req.evidence)}"</div>`;
+    html += `<div class="reason">${esc(req.reason)}</div></div>`;
+  });
+  html += `<div class="section-h">Suggested interview questions</div>`;
+  (r.interview_questions||[]).forEach(q=>{ html += `<div class="q">${esc(q)}</div>`; });
+  html += `<div class="section-h">Bias audit</div><div class="bias">${esc(r.bias_note)}</div>`;
+  report.innerHTML = html;
+  report.style.display = "block";
+  report.scrollIntoView({behavior:'smooth', block:'start'});
+}
+</script>
+</body>
+</html>
